@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class UserFavoriteController extends Controller
+class FavoriteController extends Controller
 {
     public function store(Request $request, $id)
     {

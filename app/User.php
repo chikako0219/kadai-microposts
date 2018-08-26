@@ -34,10 +34,11 @@ class User extends Authenticatable
 
     public function feed_microposts()
     {
-        $favorite_user_ids = $this->favorite()-> pluck('users.id')->toArray();
-        return Micropost::whereIn('user_id', $favorite_user_ids);
+        $follow_user_ids = $this->followings()-> pluck('users.id')->toArray();
+        $follow_user_ids[] = $this->id;
+        return Micropost::whereIn('user_id', $follow_user_ids);
     }
-
+    
 //Follow機能の追加
     public function followings(){
         return $this->belongsToMany(User::class, 'user_follow', 'user_id', 'follow_id')->withTimestamps();
@@ -87,49 +88,45 @@ class User extends Authenticatable
 
 
 
-
 //Favoriteの追加
     public function favorite()
     {
-        return $this->belongsToMany(User::class, 'favorite', 'user_id', 'post_id')->withTimestamps();
+        return $this->belongsToMany(Micropost::class, 'favorite', 'user_id', 'post_id')->withTimestamps();
     }
 
-    public function tofavorite($userId)
+    public function tofavorite($postId)
     {
-    // 既にフォローしているかの確認
-    $exist = $this->is_favorite($userId);
-    // 自分自身ではないかの確認
-    //$its_me = $this->id == $postId;
+    // 既にお気に入り登録しているかの確認
+    //userIdではなく，postIdであっているのか？
+    $exist = $this->is_favorite($postId);
 
-    if ($exist || $its_me) {
-        // 既にフォローしていれば何もしない
+    if ($exist) {
+        // 既にお気に入り登録していれば何もしない
         return false;
     } else {
-        // 未フォローであればフォローする
+        // 未登録であればお気に入り登録をする
         $this->favorite()->attach($postId);
         return true;
     }
     }
 
-    public function unfavorite($userId)
+    public function unfavorite($postId)
     {
-    // 既にフォローしているかの確認
+    // 既にお気に入り登録しているかの確認
     $exist = $this->is_favorite($postId);
-    // 自分自身ではないかの確認
-    //$its_me = $this->id == $userId;
 
-    if ($exist && !$its_me) {
-        // 既にフォローしていればフォローを外す
+    if ($exist) {
+        // 既にお気に入り登録していれば登録を外す
         $this->favorite()->detach($postId);
         return true;
     } else {
-        // 未フォローであれば何もしない
+        // 未登録であれば何もしない
         return false;
     }
     }
 
-    public function is_favorite($userId) {
-    return $this->favorites()->where('post_id', $userId)->exists();
+    public function is_favorite($postId) {
+    return $this->favorite()->where('post_id', $postId)->exists();
     }
 
 
